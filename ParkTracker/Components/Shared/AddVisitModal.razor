@@ -24,14 +24,22 @@
                     }
                     <div class="mb-3">
                         <label class="form-label">Park</label>
-                        <InputSelect class="form-select" @bind-Value="model.ParkId">
-                            <option value="0">-- Select a park --</option>
-                            @foreach (var park in Parks.OrderBy(p => p.Name))
-                            {
-                                <option value="@park.Id">@park.Name (@park.State)</option>
-                            }
-                        </InputSelect>
-                        <ValidationMessage For="() => model.ParkId" />
+                        @if (PreselectedParkId.HasValue)
+                        {
+                            var selectedPark = Parks.FirstOrDefault(p => p.Id == PreselectedParkId.Value);
+                            <p class="form-control-plaintext fw-semibold">@(selectedPark is not null ? $"{selectedPark.Name} ({selectedPark.State})" : "Unknown Park")</p>
+                        }
+                        else
+                        {
+                            <InputSelect class="form-select" @bind-Value="model.ParkId">
+                                <option value="0">-- Select a park --</option>
+                                @foreach (var park in Parks.OrderBy(p => p.Name))
+                                {
+                                    <option value="@park.Id">@park.Name (@park.State)</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="() => model.ParkId" />
+                        }
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Visit Date (optional)</label>
@@ -49,12 +57,19 @@
 
 @code {
     [Parameter, EditorRequired] public List<Park> Parks { get; set; } = [];
+    [Parameter] public int? PreselectedParkId { get; set; }
     [Parameter, EditorRequired] public EventCallback OnVisitSaved { get; set; }
     [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
 
     private FormModel model = new();
     private string? errorMessage;
     private bool saving = false;
+
+    protected override void OnParametersSet()
+    {
+        if (PreselectedParkId.HasValue)
+            model.ParkId = PreselectedParkId.Value;
+    }
 
     private async Task HandleSubmit()
     {
