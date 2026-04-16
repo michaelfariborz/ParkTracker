@@ -1,6 +1,7 @@
 window.leafletInterop = (function () {
     let map = null;
     let markers = [];
+    let dotNetRef = null;
 
     function initMap(containerId, lat, lon, zoom) {
         if (map) {
@@ -14,7 +15,8 @@ window.leafletInterop = (function () {
         }).addTo(map);
     }
 
-    function addPins(parks) {
+    function addPins(parks, dotNetObjRef) {
+        dotNetRef = dotNetObjRef;
         parks.forEach(function (park) {
             const color = park.visited ? '#e63946' : '#adb5bd';
             const icon = L.divIcon({
@@ -38,6 +40,7 @@ window.leafletInterop = (function () {
                     .join('<br>');
                 popupHtml += `<br><em>Visited:</em><br>${dates}`;
             }
+            popupHtml += `<br><button class="btn btn-sm btn-primary mt-2" onclick="leafletInterop.openAddVisit(${park.id})">+ Add Visit</button>`;
 
             const marker = L.marker([park.latitude, park.longitude], { icon })
                 .addTo(map)
@@ -54,5 +57,11 @@ window.leafletInterop = (function () {
         markers = [];
     }
 
-    return { initMap, addPins, clearPins };
+    function openAddVisit(parkId) {
+        if (dotNetRef) {
+            dotNetRef.invokeMethodAsync('OpenAddVisitFromMap', parkId);
+        }
+    }
+
+    return { initMap, addPins, clearPins, openAddVisit };
 })();

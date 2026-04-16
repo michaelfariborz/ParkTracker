@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 
 @using System.Security.Claims
+@using Microsoft.JSInterop
 @using ParkTracker.Data.Models
 @using ParkTracker.Services
 @using ParkTracker.Components.Shared
@@ -10,6 +11,8 @@
 @inject ParkService ParkService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JS
+
+@implements IDisposable
 
 <PageTitle>Park Tracker</PageTitle>
 
@@ -24,14 +27,17 @@
 @if (showModal)
 {
     <AddVisitModal Parks="parks"
+                   PreselectedParkId="preselectedParkId"
                    OnVisitSaved="HandleVisitSaved"
-                   OnClose="() => showModal = false" />
+                   OnClose="CloseModal" />
 }
 
 @code {
     private List<Park> parks = [];
     private string? currentUserId;
     private bool showModal = false;
+    private int? preselectedParkId;
+    private DotNetObjectReference<Home>? dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -44,7 +50,29 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
             await InitializeMap();
+        }
+    }
+
+    [JSInvokable]
+    public async Task OpenAddVisitFromMap(int parkId)
+    {
+        preselectedParkId = parkId;
+        showModal = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        preselectedParkId = null;
+    }
+
+    public void Dispose()
+    {
+        dotNetRef?.Dispose();
     }
 
     private async Task InitializeMap()
@@ -67,7 +95,7 @@
         }).ToArray();
 
         await JS.InvokeVoidAsync("leafletInterop.clearPins");
-        await JS.InvokeVoidAsync("leafletInterop.addPins", (object)pins);
+        await JS.InvokeVoidAsync("leafletInterop.addPins", (object)pins, dotNetRef);
     }
 
     private async Task HandleVisitSaved()
