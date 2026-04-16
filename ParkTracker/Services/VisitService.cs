@@ -12,7 +12,9 @@ public class VisitService(ApplicationDbContext db)
         {
             ParkId = parkId,
             UserId = userId,
-            VisitDate = visitDate
+            VisitDate = visitDate.HasValue
+                ? DateTime.SpecifyKind(visitDate.Value, DateTimeKind.Utc)
+                : null
         });
         await db.SaveChangesAsync();
     }
