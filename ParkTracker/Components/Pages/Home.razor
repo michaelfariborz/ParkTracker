@@ -1,0 +1,80 @@
+@page "/"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using System.Security.Claims
+@using ParkTracker.Data.Models
+@using ParkTracker.Services
+@using ParkTracker.Components.Shared
+
+@inject ParkService ParkService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+
+<PageTitle>Park Tracker</PageTitle>
+
+<h1>My National Parks</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="() => showModal = true">+ Add Visit</button>
+</div>
+
+<div id="map-container" style="height:600px;width:100%;border-radius:8px;"></div>
+
+@if (showModal)
+{
+    <AddVisitModal Parks="parks"
+                   OnVisitSaved="HandleVisitSaved"
+                   OnClose="() => showModal = false" />
+}
+
+@code {
+    private List<Park> parks = [];
+    private string? currentUserId;
+    private bool showModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (currentUserId is not null)
+            parks = await ParkService.GetAllParksWithUserVisitsAsync(currentUserId);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await InitializeMap();
+    }
+
+    private async Task InitializeMap()
+    {
+        await JS.InvokeVoidAsync("leafletInterop.initMap", "map-container", 39.5, -98.35, 4);
+        await RefreshPins();
+    }
+
+    private async Task RefreshPins()
+    {
+        var pins = parks.Select(p => new
+        {
+            id = p.Id,
+            name = p.Name,
+            state = p.State,
+            latitude = p.Latitude,
+            longitude = p.Longitude,
+            visited = p.Visits.Any(),
+            visitDates = p.Visits.Select(v => v.VisitDate?.ToString("o")).ToArray()
+        }).ToArray();
+
+        await JS.InvokeVoidAsync("leafletInterop.clearPins");
+        await JS.InvokeVoidAsync("leafletInterop.addPins", (object)pins);
+    }
+
+    private async Task HandleVisitSaved()
+    {
+        showModal = false;
+        if (currentUserId is not null)
+            parks = await ParkService.GetAllParksWithUserVisitsAsync(currentUserId);
+        await RefreshPins();
+    }
+}

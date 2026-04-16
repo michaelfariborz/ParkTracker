@@ -1,0 +1,90 @@
+@using System.Security.Claims
+@using ParkTracker.Data.Models
+@using ParkTracker.Services
+
+@inject VisitService VisitService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1040;"
+     @onclick="OnClose"></div>
+
+<div class="modal d-block" tabindex="-1" style="z-index:1050;">
+    <div class="modal-dialog" @onclick:stopPropagation>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Park Visit</h5>
+                <button type="button" class="btn-close" @onclick="OnClose"></button>
+            </div>
+            <EditForm Model="model" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <div class="modal-body">
+                    @if (errorMessage is not null)
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Park</label>
+                        <InputSelect class="form-select" @bind-Value="model.ParkId">
+                            <option value="0">-- Select a park --</option>
+                            @foreach (var park in Parks.OrderBy(p => p.Name))
+                            {
+                                <option value="@park.Id">@park.Name (@park.State)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => model.ParkId" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Visit Date (optional)</label>
+                        <InputDate class="form-control" @bind-Value="model.VisitDate" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
+                    <button type="submit" class="btn btn-primary" disabled="@saving">Save</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<Park> Parks { get; set; } = [];
+    [Parameter, EditorRequired] public EventCallback OnVisitSaved { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+
+    private FormModel model = new();
+    private string? errorMessage;
+    private bool saving = false;
+
+    private async Task HandleSubmit()
+    {
+        if (model.ParkId == 0)
+        {
+            errorMessage = "Please select a park.";
+            return;
+        }
+
+        saving = true;
+        errorMessage = null;
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId is null)
+        {
+            errorMessage = "You must be logged in to add a visit.";
+            saving = false;
+            return;
+        }
+
+        await VisitService.AddVisitAsync(model.ParkId, userId, model.VisitDate);
+        saving = false;
+        await OnVisitSaved.InvokeAsync();
+    }
+
+    private class FormModel
+    {
+        public int ParkId { get; set; }
+        public DateTime? VisitDate { get; set; }
+    }
+}
