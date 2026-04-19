@@ -14,6 +14,8 @@
 
 <h1>National Parks</h1>
 
+<p class="text-muted">Visited @parks.Count(p => p.Visits.Any()) of @parks.Count parks</p>
+
 <div class="mb-3">
     <input @bind="filterText"
            @bind:event="oninput"
