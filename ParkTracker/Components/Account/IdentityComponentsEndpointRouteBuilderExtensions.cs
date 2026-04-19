@@ -20,7 +20,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        var accountGroup = endpoints.MapGroup("/Account");
+        var accountGroup = endpoints.MapGroup("/Account").RequireRateLimiting("auth");
 
         accountGroup.MapPost("/PerformExternalLogin", (
             HttpContext context,
@@ -47,6 +47,8 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             [FromForm] string returnUrl) =>
         {
             await signInManager.SignOutAsync();
+            if (string.IsNullOrEmpty(returnUrl) || !Uri.IsWellFormedUriString(returnUrl, UriKind.Relative))
+                returnUrl = "~/";
             return TypedResults.LocalRedirect($"~/{returnUrl}");
         });
 
