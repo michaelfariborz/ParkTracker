@@ -1,0 +1,131 @@
+@page "/parks"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using System.Security.Claims
+@using ParkTracker.Data.Models
+@using ParkTracker.Services
+@using ParkTracker.Components.Shared
+
+@inject ParkService ParkService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Parks List - Park Tracker</PageTitle>
+
+<h1>National Parks</h1>
+
+<div class="mb-3">
+    <input @bind="filterText"
+           @bind:event="oninput"
+           class="form-control"
+           placeholder="Search by park name or state..." />
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Park Name</th>
+                <th>State</th>
+                <th>Status</th>
+                <th>Visit Date(s)</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var park in FilteredParks)
+            {
+                var visits = park.Visits.OrderBy(v => v.VisitDate ?? v.CreatedAt).ToList();
+                var hasVisits = visits.Any();
+
+                <tr>
+                    <td class="fw-semibold">@park.Name</td>
+                    <td>@park.State</td>
+                    <td>
+                        @if (hasVisits)
+                        {
+                            <span class="badge bg-success">Visited</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Not Visited</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!hasVisits)
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                        else
+                        {
+                            @string.Join(", ", visits.Select(v =>
+                                v.VisitDate.HasValue
+                                    ? v.VisitDate.Value.ToString("MMM d, yyyy")
+                                    : "Date unknown"))
+                        }
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenAddVisit(park)">
+                            + Add Visit
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="text-muted small mt-2">
+    Showing @FilteredParks.Count() of @parks.Count parks
+</div>
+
+@if (showModal && selectedPark is not null)
+{
+    <AddVisitModal Parks="parks"
+                   PreselectedParkId="selectedPark.Id"
+                   OnVisitSaved="HandleVisitSaved"
+                   OnClose="CloseModal" />
+}
+
+@code {
+    private List<Park> parks = [];
+    private string? currentUserId;
+    private string filterText = string.Empty;
+    private bool showModal = false;
+    private Park? selectedPark;
+
+    private IEnumerable<Park> FilteredParks =>
+        string.IsNullOrWhiteSpace(filterText)
+            ? parks
+            : parks.Where(p =>
+                p.Name.Contains(filterText, StringComparison.OrdinalIgnoreCase) ||
+                p.State.Contains(filterText, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (currentUserId is not null)
+            parks = await ParkService.GetAllParksWithUserVisitsAsync(currentUserId);
+    }
+
+    private void OpenAddVisit(Park park)
+    {
+        selectedPark = park;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedPark = null;
+    }
+
+    private async Task HandleVisitSaved()
+    {
+        showModal = false;
+        selectedPark = null;
+        if (currentUserId is not null)
+            parks = await ParkService.GetAllParksWithUserVisitsAsync(currentUserId);
+    }
+}
