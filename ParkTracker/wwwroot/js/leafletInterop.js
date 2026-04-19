@@ -3,6 +3,15 @@ window.leafletInterop = (function () {
     let markers = [];
     let dotNetRef = null;
 
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
     function initMap(containerId, lat, lon, zoom) {
         if (map) {
             map.remove();
@@ -33,7 +42,7 @@ window.leafletInterop = (function () {
                 iconAnchor: [7, 7]
             });
 
-            let popupHtml = `<strong>${park.name}</strong><br>${park.state}`;
+            let popupHtml = `<strong>${escapeHtml(park.name)}</strong><br>${escapeHtml(park.state)}`;
             if (park.visited && park.visitDates && park.visitDates.length > 0) {
                 const dates = park.visitDates
                     .map(d => d ? new Date(d).toLocaleDateString() : 'Date not recorded')
