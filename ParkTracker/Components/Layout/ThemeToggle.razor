@@ -10,15 +10,17 @@
 
 @code {
     private bool _isDark;
-    private bool _initialized;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            var theme = await JS.InvokeAsync<string>("getTheme");
-            _isDark = theme == "dark";
-            _initialized = true;
+            try
+            {
+                var theme = await JS.InvokeAsync<string>("getTheme");
+                _isDark = theme == "dark";
+            }
+            catch (JSException) { }
             StateHasChanged();
         }
     }
@@ -27,6 +29,5 @@
     {
         _isDark = !_isDark;
         await JS.InvokeVoidAsync("setTheme", _isDark ? "dark" : "light");
-        StateHasChanged();
     }
 }
