@@ -15,3 +15,11 @@ window.toggleTheme = () => {
         btn.setAttribute('title', label);
     });
 };
+
+// Re-apply theme after Blazor Enhanced Navigation strips data-bs-theme from <html>
+document.addEventListener('blazor:navigated', () => {
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = stored !== null ? stored : (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-bs-theme', theme);
+});
