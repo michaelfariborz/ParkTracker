@@ -63,3 +63,34 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+[data-bs-theme="dark"] a,
+[data-bs-theme="dark"] .btn-link {
+    color: #74c69d;
+}
+
+[data-bs-theme="dark"] .btn-primary {
+    background-color: #40916c;
+    border-color: #2d6a4f;
+}
+
+[data-bs-theme="dark"] .btn-primary:hover,
+[data-bs-theme="dark"] .btn-primary:focus,
+[data-bs-theme="dark"] .btn-primary:active {
+    background-color: #2d6a4f;
+    border-color: #2d6a4f;
+}
+
+[data-bs-theme="dark"] .btn:focus,
+[data-bs-theme="dark"] .btn:active:focus,
+[data-bs-theme="dark"] .btn-link.nav-link:focus,
+[data-bs-theme="dark"] .form-control:focus,
+[data-bs-theme="dark"] .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem rgba(116, 198, 157, 0.4);
+}
+
+.theme-toggle-btn {
+    font-size: 1.1rem;
+    padding: 0.5rem 0.85rem;
+    line-height: 1;
+}
