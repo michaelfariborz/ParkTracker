@@ -1,33 +1,7 @@
-@inject IJSRuntime JS
-@rendermode InteractiveServer
-
 <button type="button" class="nav-link btn btn-link theme-toggle-btn"
-        aria-label="@(_isDark ? "Switch to light mode" : "Switch to dark mode")"
-        title="@(_isDark ? "Switch to light mode" : "Switch to dark mode")"
-        @onclick="ToggleTheme">
-    @(_isDark ? "☀️" : "🌙")
+        aria-label="Toggle dark mode"
+        title="Toggle dark mode"
+        onclick="window.toggleTheme()">
+    <span class="theme-icon-light">🌙</span>
+    <span class="theme-icon-dark">☀️</span>
 </button>
-
-@code {
-    private bool _isDark;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            try
-            {
-                var theme = await JS.InvokeAsync<string>("getTheme");
-                _isDark = theme == "dark";
-            }
-            catch (Exception ex) when (ex is JSException or InvalidOperationException) { }
-            StateHasChanged();
-        }
-    }
-
-    private async Task ToggleTheme()
-    {
-        _isDark = !_isDark;
-        await JS.InvokeVoidAsync("setTheme", _isDark ? "dark" : "light");
-    }
-}

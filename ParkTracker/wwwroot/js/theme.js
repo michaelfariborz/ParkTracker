@@ -5,3 +5,8 @@ window.setTheme = (theme) => {
     document.documentElement.setAttribute('data-bs-theme', theme);
     localStorage.setItem('theme', theme);
 };
+
+window.toggleTheme = () => {
+    const next = window.getTheme() === 'dark' ? 'light' : 'dark';
+    window.setTheme(next);
+};

@@ -97,3 +97,8 @@ h1:focus {
     padding: 0.5rem 0.85rem;
     line-height: 1;
 }
+
+/* Show correct icon based on active theme — CSS-driven, no JS required */
+.theme-icon-dark { display: none; }
+[data-bs-theme="dark"] .theme-icon-light { display: none; }
+[data-bs-theme="dark"] .theme-icon-dark { display: inline; }
