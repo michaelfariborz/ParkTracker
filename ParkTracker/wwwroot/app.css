@@ -89,6 +89,9 @@ h1:focus {
     box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem rgba(116, 198, 157, 0.4);
 }
 
+/* In global scope (not NavMenu.razor.css isolation) because ThemeToggle.razor
+   renders as a separate component. font-size overrides NavMenu.razor.css's
+   font-size: inherit for .btn-link. */
 .theme-toggle-btn {
     font-size: 1.1rem;
     padding: 0.5rem 0.85rem;
