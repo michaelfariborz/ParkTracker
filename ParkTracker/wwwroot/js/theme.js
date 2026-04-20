@@ -2,8 +2,8 @@ window.getTheme = () => document.documentElement.getAttribute('data-bs-theme') ?
 
 window.setTheme = (theme) => {
     if (theme !== 'light' && theme !== 'dark') return;
+    localStorage.setItem('theme', theme); // Before setAttribute so observer reads correct value
     document.documentElement.setAttribute('data-bs-theme', theme);
-    localStorage.setItem('theme', theme);
 };
 
 window.toggleTheme = () => {
@@ -16,10 +16,18 @@ window.toggleTheme = () => {
     });
 };
 
-// Re-apply theme after Blazor Enhanced Navigation strips data-bs-theme from <html>
-document.addEventListener('blazor:navigated', () => {
+function resolveStoredTheme() {
     const stored = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = (stored === 'light' || stored === 'dark') ? stored : (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-bs-theme', theme);
-});
+    return (stored === 'light' || stored === 'dark') ? stored : (prefersDark ? 'dark' : 'light');
+}
+
+// Restore theme whenever Blazor Enhanced Navigation or anything else strips data-bs-theme from <html>.
+// localStorage is written before setAttribute in setTheme, so this observer never incorrectly
+// reverts a user-initiated toggle.
+new MutationObserver(() => {
+    const expected = resolveStoredTheme();
+    if (document.documentElement.getAttribute('data-bs-theme') !== expected) {
+        document.documentElement.setAttribute('data-bs-theme', expected);
+    }
+}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
