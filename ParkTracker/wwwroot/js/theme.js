@@ -9,4 +9,9 @@ window.setTheme = (theme) => {
 window.toggleTheme = () => {
     const next = window.getTheme() === 'dark' ? 'light' : 'dark';
     window.setTheme(next);
+    const label = next === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+    document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', label);
+    });
 };
