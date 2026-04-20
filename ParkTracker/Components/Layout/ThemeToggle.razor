@@ -1,0 +1,32 @@
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<button class="nav-link btn btn-link theme-toggle-btn"
+        aria-label="@(_isDark ? "Switch to light mode" : "Switch to dark mode")"
+        title="@(_isDark ? "Switch to light mode" : "Switch to dark mode")"
+        @onclick="ToggleTheme">
+    @(_isDark ? "☀️" : "🌙")
+</button>
+
+@code {
+    private bool _isDark;
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var theme = await JS.InvokeAsync<string>("getTheme");
+            _isDark = theme == "dark";
+            _initialized = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        _isDark = !_isDark;
+        await JS.InvokeVoidAsync("setTheme", _isDark ? "dark" : "light");
+        StateHasChanged();
+    }
+}
