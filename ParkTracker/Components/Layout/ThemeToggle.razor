@@ -1,7 +1,7 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<button class="nav-link btn btn-link theme-toggle-btn"
+<button type="button" class="nav-link btn btn-link theme-toggle-btn"
         aria-label="@(_isDark ? "Switch to light mode" : "Switch to dark mode")"
         title="@(_isDark ? "Switch to light mode" : "Switch to dark mode")"
         @onclick="ToggleTheme">
@@ -20,7 +20,7 @@
                 var theme = await JS.InvokeAsync<string>("getTheme");
                 _isDark = theme == "dark";
             }
-            catch (JSException) { }
+            catch (Exception ex) when (ex is JSException or InvalidOperationException) { }
             StateHasChanged();
         }
     }
