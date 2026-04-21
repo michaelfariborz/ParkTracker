@@ -4,6 +4,7 @@
 
 @inject IVisitService VisitService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<AddVisitModal> Logger
 
 <div class="modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1040;"
      @onclick="OnClose"></div>
@@ -95,12 +96,15 @@
         try
         {
             await VisitService.AddVisitAsync(model.ParkId, userId, model.VisitDate);
-            saving = false;
             await OnVisitSaved.InvokeAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to save visit: {ex.Message}";
+            errorMessage = "Failed to save visit. Please try again.";
+            Logger.LogError(ex, "Failed to save visit for park {ParkId}", model.ParkId);
+        }
+        finally
+        {
             saving = false;
         }
     }
