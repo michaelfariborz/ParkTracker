@@ -134,3 +134,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 await app.RunAsync();
+
+// Make Program discoverable by WebApplicationFactory
+public partial class Program { }

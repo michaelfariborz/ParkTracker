@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ParkTracker.E2ETests/ParkTracker.E2ETests.csproj" />
+  <Project Path="ParkTracker.Tests/ParkTracker.Tests.csproj" />
+  <Project Path="ParkTracker/ParkTracker.csproj" />
+</Solution>
