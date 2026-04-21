@@ -47,8 +47,8 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-builder.Services.AddScoped<ParkService>();
-builder.Services.AddScoped<VisitService>();
+builder.Services.AddScoped<IParkService, ParkService>();
+builder.Services.AddScoped<IVisitService, VisitService>();
 
 builder.Services.AddRateLimiter(options =>
 {

@@ -4,7 +4,7 @@ using ParkTracker.Data.Models;
 
 namespace ParkTracker.Services;
 
-public class VisitService(ApplicationDbContext db)
+public class VisitService(ApplicationDbContext db) : IVisitService
 {
     public async Task AddVisitAsync(int parkId, string userId, DateTime? visitDate)
     {
