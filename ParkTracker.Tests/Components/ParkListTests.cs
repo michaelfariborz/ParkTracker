@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using ParkTracker.Components.Pages;
+using ParkTracker.Components.Shared;
 using ParkTracker.Data.Models;
 using ParkTracker.Services;
 
@@ -108,5 +109,48 @@ public class ParkListTests : BunitContext
         await addVisitButton.ClickAsync(new());
 
         Assert.NotEmpty(cut.FindAll(".modal"));
+    }
+
+    [Fact]
+    public async Task RendersCorrectVisitedCount()
+    {
+        var parks = new List<Park>
+        {
+            new Park { Id = 1, Name = "Acadia", State = "ME", Latitude = 44.4, Longitude = -68.2,
+                Visits = [new Visit { ParkId = 1, UserId = TestUserId, CreatedAt = DateTime.UtcNow }] },
+            new Park { Id = 2, Name = "Zion", State = "UT", Latitude = 37.3, Longitude = -113.0 }
+        };
+        SetupServices(parks);
+        var cut = Render<ParkList>();
+        await cut.InvokeAsync(() => { });
+
+        Assert.Contains("Visited 1 of 2 parks", cut.Markup);
+    }
+
+    [Fact]
+    public async Task HandleVisitSaved_RefreshesParksAndClosesModal()
+    {
+        var parkService = SetupServices();
+        var cut = Render<ParkList>();
+        await cut.InvokeAsync(() => { });
+
+        // Open the modal
+        var addVisitButton = cut.FindAll("button").First(b => b.TextContent.Contains("Add Visit"));
+        await addVisitButton.ClickAsync(new());
+        Assert.NotEmpty(cut.FindAll(".modal"));
+
+        // Simulate the modal firing OnVisitSaved — find the modal and invoke its callback
+        // bUnit renders AddVisitModal inline; trigger OnVisitSaved via the component instance
+        await cut.InvokeAsync(async () =>
+        {
+            // Locate the modal component and invoke its OnVisitSaved parameter
+            var modal = cut.FindComponent<AddVisitModal>();
+            await modal.Instance.OnVisitSaved.InvokeAsync();
+        });
+
+        // Modal should be gone
+        Assert.Empty(cut.FindAll(".modal"));
+        // Service should have been called twice: once on init, once after save
+        await parkService.Received(2).GetAllParksWithUserVisitsAsync(TestUserId);
     }
 }

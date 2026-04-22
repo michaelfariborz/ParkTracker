@@ -103,4 +103,33 @@ public class AdminTests : BunitContext
         var alert = cut.Find(".alert-danger");
         Assert.Contains("UNIQUE constraint failed", alert.TextContent);
     }
+
+    [Fact]
+    public async Task ValidSubmit_ClearsFormFieldsAfterSuccess()
+    {
+        var parkService = SetupServices();
+        parkService.AddParkAsync(
+            Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<double>(), Arg.Any<double>(),
+            Arg.Any<string?>())
+            .Returns(Task.CompletedTask);
+        parkService.GetAllParksAsync()
+            .Returns(Task.FromResult(new List<Park>()));
+
+        var cut = Render<Admin>();
+        await cut.InvokeAsync(() => { });
+
+        await cut.InvokeAsync(() =>
+        {
+            cut.FindAll("input.form-control")[0].Change("Olympic");
+            cut.FindAll("input.form-control")[1].Change("WA");
+        });
+
+        await cut.Find("button[type='submit']").ClickAsync(new());
+
+        // After submit, model = new() — Name and State inputs should be empty
+        var inputs = cut.FindAll("input.form-control");
+        Assert.Equal("", inputs[0].GetAttribute("value") ?? "");
+        Assert.Equal("", inputs[1].GetAttribute("value") ?? "");
+    }
 }

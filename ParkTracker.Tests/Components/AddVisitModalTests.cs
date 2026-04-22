@@ -132,4 +132,29 @@ public class AddVisitModalTests : BunitContext
         var alert = cut.Find(".alert-danger");
         Assert.Contains("Please try again", alert.TextContent);
     }
+
+    [Fact]
+    public async Task Submit_WhenUserNotAuthenticated_ShowsLoginRequiredMessage()
+    {
+        // Auth state present but NameIdentifier claim is absent
+        var auth = this.AddAuthorization();
+        auth.SetAuthorized("testuser");
+        // No NameIdentifier claim — userId will be null inside HandleSubmit
+
+        var visitService = Substitute.For<IVisitService>();
+        Services.AddSingleton(visitService);
+
+        var parks = MakeParks();
+        var cut = Render<AddVisitModal>(p => p
+            .Add(m => m.Parks, parks)
+            .Add(m => m.PreselectedParkId, 1)
+            .Add(m => m.OnVisitSaved, EventCallback.Empty)
+            .Add(m => m.OnClose, EventCallback.Empty));
+
+        await cut.Find("button[type='submit']").ClickAsync(new());
+
+        var alert = cut.Find(".alert-danger");
+        Assert.Contains("logged in", alert.TextContent);
+        await visitService.DidNotReceive().AddVisitAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<DateTime?>());
+    }
 }
