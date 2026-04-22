@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -16,13 +16,12 @@ namespace ParkTracker.E2ETests.Infrastructure;
 
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
-    // Shared database name so both hosts access the same SQLite in-memory DB
-    private readonly string _dbName = $"e2etest_{Guid.NewGuid():N}";
+    // Use a temp file so EnsureCreated from the second host startup sees the file exists
+    private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"e2etest_{Guid.NewGuid():N}.db");
     private IHost? _kestrelHost;
 
     public string ServerAddress { get; private set; } = "";
 
-    // Call this to start the Kestrel host and get the base URL for Playwright
     public string EnsureStarted()
     {
         if (string.IsNullOrEmpty(ServerAddress))
@@ -32,27 +31,28 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        // Use Development so MapStaticAssets serves blazor.web.js and other framework files.
+        // IsE2ETesting flag tells Program.cs to use test seeding instead of migrations.
+        builder.UseEnvironment("Development");
 
         builder.ConfigureAppConfiguration(config =>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["AdminSettings:Email"] = "testadmin@parktracker.test",
-                // 15 chars, uppercase, lowercase, digit, special — meets the 12+ char policy
-                ["AdminSettings:Password"] = "TestAdmin1!Pass"
+                ["AdminSettings:Password"] = "TestAdmin1!Pass",
+                ["IsE2ETesting"] = "true"
             }));
 
         builder.ConfigureServices(services =>
         {
-            // Remove the Npgsql DbContext registration
+            // Remove all EF Core DbContext registrations to avoid dual-provider error.
+            // Must remove the options AND the options-configuration delegate (EF Core 8+).
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
             services.RemoveAll<ApplicationDbContext>();
 
-            // Register SQLite with Cache=Shared so both hosts share the same in-memory DB
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlite(
-                    $"DataSource={_dbName};Mode=Memory;Cache=Shared",
-                    o => o.CommandTimeout(30)));
+                options.UseSqlite($"DataSource={_dbPath}", o => o.CommandTimeout(30)));
         });
     }
 
@@ -86,5 +86,9 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             _kestrelHost.Dispose();
         }
         await base.DisposeAsync();
+
+        foreach (var path in new[] { _dbPath, _dbPath + "-wal", _dbPath + "-shm" })
+            if (File.Exists(path))
+                File.Delete(path);
     }
 }

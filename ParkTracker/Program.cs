@@ -106,33 +106,67 @@ app.MapAdditionalIdentityEndpoints();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    if (app.Environment.IsEnvironment("Testing"))
-        await db.Database.EnsureCreatedAsync();
-    else
-        await db.Database.MigrateAsync();
-
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    if (!await roleManager.RoleExistsAsync("Admin"))
-        await roleManager.CreateAsync(new IdentityRole("Admin"));
-
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     var adminEmail = app.Configuration["AdminSettings:Email"];
     if (string.IsNullOrWhiteSpace(adminEmail))
         throw new InvalidOperationException("AdminSettings:Email is not configured. Use User Secrets or an environment variable.");
     var adminPassword = app.Configuration["AdminSettings:Password"];
     if (string.IsNullOrWhiteSpace(adminPassword))
         throw new InvalidOperationException("AdminSettings:Password is not configured. Use User Secrets or an environment variable.");
-    if (await userManager.FindByEmailAsync(adminEmail) is null)
-    {
-        var adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
-        await userManager.CreateAsync(adminUser, adminPassword);
-        await userManager.AddToRoleAsync(adminUser, "Admin");
-    }
 
-    if (!await db.Parks.AnyAsync())
+    if (app.Configuration.GetValue<bool>("IsE2ETesting"))
     {
-        db.Parks.AddRange(SeedData.GetNationalParks());
-        await db.SaveChangesAsync();
+        // In E2E tests, two hosts start against the same database file.
+        // The second host finds the DB already initialized; swallow all database-exists
+        // exceptions so startup completes successfully on both hosts.
+        try
+        {
+            await db.Database.EnsureCreatedAsync();
+
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            if (!await roleManager.RoleExistsAsync("Admin"))
+                await roleManager.CreateAsync(new IdentityRole("Admin"));
+
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            if (await userManager.FindByEmailAsync(adminEmail) is null)
+            {
+                var adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
+                await userManager.CreateAsync(adminUser, adminPassword);
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
+
+            if (!await db.Parks.AnyAsync())
+            {
+                db.Parks.AddRange(SeedData.GetNationalParks());
+                await db.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex) when (
+            ex.Message.Contains("already exists") ||
+            ex.Message.Contains("UNIQUE constraint") ||
+            ex.InnerException?.Message?.Contains("already exists") == true ||
+            ex.InnerException?.Message?.Contains("UNIQUE constraint") == true) { }
+    }
+    else
+    {
+        await db.Database.MigrateAsync();
+
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        if (!await roleManager.RoleExistsAsync("Admin"))
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        if (await userManager.FindByEmailAsync(adminEmail) is null)
+        {
+            var adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
+            await userManager.CreateAsync(adminUser, adminPassword);
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+
+        if (!await db.Parks.AnyAsync())
+        {
+            db.Parks.AddRange(SeedData.GetNationalParks());
+            await db.SaveChangesAsync();
+        }
     }
 }
 
