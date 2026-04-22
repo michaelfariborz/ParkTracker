@@ -2,8 +2,9 @@
 @using ParkTracker.Data.Models
 @using ParkTracker.Services
 
-@inject VisitService VisitService
+@inject IVisitService VisitService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<AddVisitModal> Logger
 
 <div class="modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1040;"
      @onclick="OnClose"></div>
@@ -92,9 +93,20 @@
             return;
         }
 
-        await VisitService.AddVisitAsync(model.ParkId, userId, model.VisitDate);
-        saving = false;
-        await OnVisitSaved.InvokeAsync();
+        try
+        {
+            await VisitService.AddVisitAsync(model.ParkId, userId, model.VisitDate);
+            await OnVisitSaved.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to save visit. Please try again.";
+            Logger.LogError(ex, "Failed to save visit for park {ParkId}", model.ParkId);
+        }
+        finally
+        {
+            saving = false;
+        }
     }
 
     private class FormModel

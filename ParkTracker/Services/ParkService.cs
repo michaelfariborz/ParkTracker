@@ -4,7 +4,7 @@ using ParkTracker.Data.Models;
 
 namespace ParkTracker.Services;
 
-public class ParkService(ApplicationDbContext db)
+public class ParkService(ApplicationDbContext db) : IParkService
 {
     public async Task<List<Park>> GetAllParksWithUserVisitsAsync(string userId) =>
         await db.Parks
