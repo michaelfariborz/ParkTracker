@@ -29,16 +29,18 @@ public class VisitFlowTests : IClassFixture<PlaywrightFixture>
         var page = await _fixture.NewLoggedInPageAsync("/parks");
         await page.WaitForSelectorAsync("table");
 
-        // Click the first "Add Visit" button
-        var addButtons = await page.QuerySelectorAllAsync("button:has-text('Add Visit')");
-        Assert.NotEmpty(addButtons);
-        await addButtons[0].ClickAsync();
+        // Use Locator (lazy, re-queries on each action) to avoid stale element handles
+        // after Blazor re-renders the component post-circuit-init.
+        var firstAddVisit = page.Locator("button:has-text('Add Visit')").First;
+        await firstAddVisit.WaitForAsync();
+        await firstAddVisit.ClickAsync();
 
         // Wait for modal
         await page.WaitForSelectorAsync(".modal");
 
-        // Submit without a date (date is optional)
-        await page.ClickAsync("button[type='submit']");
+        // Submit without a date (date is optional).
+        // Scope to .modal to avoid matching the Logout button in the nav header.
+        await page.Locator(".modal button[type='submit']").ClickAsync();
 
         // Modal should close
         await page.WaitForSelectorAsync(".modal", new() { State = WaitForSelectorState.Hidden });

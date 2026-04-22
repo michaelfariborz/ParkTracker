@@ -59,8 +59,16 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         return page;
     }
 
-    // Navigate to url and wait for Blazor's SignalR circuit to negotiate,
-    // so @onclick handlers are wired up before the caller interacts with the page.
+    // Navigate to url and wait for Blazor's interactive render to finish so that
+    // @onclick handlers are wired before the caller interacts with the page.
+    //
+    // Blazor Server SSR-renders the initial HTML (table rows, buttons) before the
+    // SignalR circuit connects. For the first page load, a new negotiate + WebSocket
+    // establishes the circuit. For subsequent pages via enhanced navigation, the
+    // existing circuit is reused — no new negotiate, no new WebSocket event fires.
+    //
+    // The reliable cross-case signal is DOM stability: once Blazor's interactive
+    // render diff has been applied, the DOM stops mutating. We wait 400 ms of quiet.
     private static async Task NavigateAndAwaitBlazorCircuitAsync(IPage page, string url)
     {
         var negotiate = page.WaitForResponseAsync(
@@ -68,6 +76,19 @@ public sealed class PlaywrightFixture : IAsyncLifetime
             new() { Timeout = 10_000 });
         await page.GotoAsync(url);
         try { await negotiate; }
-        catch { /* non-interactive page */ }
+        catch { /* enhanced navigation — existing circuit, no new negotiate */ }
+
+        // Wait for DOM to stop mutating: Blazor's interactive render diff is done.
+        try
+        {
+            await page.WaitForFunctionAsync(
+                @"new Promise(resolve => {
+                    let t = setTimeout(resolve, 400);
+                    const obs = new MutationObserver(() => { clearTimeout(t); t = setTimeout(resolve, 400); });
+                    obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+                })",
+                new PageWaitForFunctionOptions { Timeout = 8_000 });
+        }
+        catch { /* best effort */ }
     }
 }
