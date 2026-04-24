@@ -130,7 +130,9 @@ using (var scope = app.Services.CreateScope())
             if (await userManager.FindByEmailAsync(adminEmail) is null)
             {
                 var adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
-                await userManager.CreateAsync(adminUser, adminPassword);
+                var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+                if (!createResult.Succeeded)
+                    throw new InvalidOperationException($"Failed to create admin user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
 
@@ -158,7 +160,9 @@ using (var scope = app.Services.CreateScope())
         if (await userManager.FindByEmailAsync(adminEmail) is null)
         {
             var adminUser = new ApplicationUser { UserName = adminEmail, Email = adminEmail };
-            await userManager.CreateAsync(adminUser, adminPassword);
+            var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+            if (!createResult.Succeeded)
+                throw new InvalidOperationException($"Failed to create admin user: {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
             await userManager.AddToRoleAsync(adminUser, "Admin");
         }
 
