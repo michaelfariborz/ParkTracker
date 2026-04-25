@@ -92,7 +92,7 @@ In the Azure Portal:
 ### 4a. Create a Service Principal
 
 ```bash
-# Note the appId, tenant, and subscriptionId from the output
+# Note the clientId, clientSecret, tenantId, and subscriptionId from the output
 az ad sp create-for-rbac --name parktracker-sp --role contributor \
   --scopes /subscriptions/<SUBSCRIPTION_ID>/resourceGroups/ParkTrackerRG \
   --json-auth
@@ -104,12 +104,12 @@ This allows GitHub Actions to authenticate without a stored password.
 
 ```bash
 az ad app federated-credential create \
-  --id <APP_ID_FROM_ABOVE> \
+  --id <CLIENT_ID_FROM_ABOVE> \
   --parameters '{
     "name": "parktracker-github",
     "issuer": "https://token.actions.githubusercontent.com",
     "subject": "repo:michaelfariborz/ParkTracker:ref:refs/heads/main",
-    "audiences": ["api://AzureADTokenEndpoint"]
+    "audiences": ["api://AzureADTokenExchange"]
   }'
 ```
 
@@ -120,9 +120,9 @@ az ad app federated-credential create \
 
 | Secret name | Value |
 |-------------|-------|
-| `AZURE_CLIENT_ID` | `appId` from Step 4a output |
-| `AZURE_TENANT_ID` | `tenant` from Step 4a output |
-| `AZURE_SUBSCRIPTION_ID` | your Azure subscription ID |
+| `AZURE_CLIENT_ID` | `clientId` from Step 4a output |
+| `AZURE_TENANT_ID` | `tenantId` from Step 4a output |
+| `AZURE_SUBSCRIPTION_ID` | `subscriptionId` from Step 4a output |
 
 ---
 
