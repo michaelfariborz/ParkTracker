@@ -64,7 +64,7 @@
                             {
                                 <div class="d-flex align-items-center gap-2">
                                     <span>@(v.VisitDate.HasValue ? v.VisitDate.Value.ToString("MMM d, yyyy") : "Date unknown")</span>
-                                    <button class="btn btn-sm btn-link p-0 lh-1" @onclick="() => OpenEditVisit(v, park)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEditVisit(v, park)">Edit</button>
                                 </div>
                             }
                         }
