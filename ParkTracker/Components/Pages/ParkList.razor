@@ -60,13 +60,15 @@
                         }
                         else
                         {
-                            @foreach (var v in visits)
-                            {
-                                <div class="d-flex align-items-center justify-content-between gap-2">
-                                    <span>@(v.VisitDate.HasValue ? v.VisitDate.Value.ToString("MMM d, yyyy") : "Date unknown")</span>
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEditVisit(v, park)">Edit</button>
-                                </div>
-                            }
+                            <div class="d-flex flex-column gap-1">
+                                @foreach (var v in visits)
+                                {
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="min-width: 7rem">@(v.VisitDate.HasValue ? v.VisitDate.Value.ToString("MMM d, yyyy") : "Date unknown")</span>
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEditVisit(v, park)">Edit</button>
+                                    </div>
+                                }
+                            </div>
                         }
                     </td>
                     <td class="text-end">
