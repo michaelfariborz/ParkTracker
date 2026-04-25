@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using ParkTracker.Data.Models;
 using ParkTracker.Services;
 
@@ -109,5 +110,115 @@ public class VisitServiceTests
         // OrderByDescending means newest first
         Assert.Equal(new DateTime(2024, 6, 15, 0, 0, 0, DateTimeKind.Utc), visits[0].VisitDate);
         Assert.Equal(new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc), visits[1].VisitDate);
+    }
+
+    [Fact]
+    public async Task UpdateVisitAsync_UpdatesDateToUtc_WhenDateProvided()
+    {
+        using var db = new TestDb();
+        var park = MakePark();
+        db.Context.Parks.Add(park);
+        var visit = new Visit { ParkId = park.Id, UserId = "user-1", VisitDate = null };
+        db.Context.Visits.Add(visit);
+        await db.Context.SaveChangesAsync();
+
+        var service = new VisitService(db.Context);
+        var result = await service.UpdateVisitAsync(visit.Id, "user-1", new DateTime(2024, 8, 1, 0, 0, 0, DateTimeKind.Unspecified));
+
+        Assert.True(result);
+        var updated = db.Context.Visits.Single();
+        Assert.NotNull(updated.VisitDate);
+        Assert.Equal(DateTimeKind.Utc, updated.VisitDate!.Value.Kind);
+        Assert.Equal(new DateTime(2024, 8, 1, 0, 0, 0, DateTimeKind.Utc), updated.VisitDate.Value);
+    }
+
+    [Fact]
+    public async Task UpdateVisitAsync_ClearsDate_WhenNullProvided()
+    {
+        using var db = new TestDb();
+        var park = MakePark();
+        db.Context.Parks.Add(park);
+        var visit = new Visit { ParkId = park.Id, UserId = "user-1", VisitDate = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) };
+        db.Context.Visits.Add(visit);
+        await db.Context.SaveChangesAsync();
+
+        var service = new VisitService(db.Context);
+        var result = await service.UpdateVisitAsync(visit.Id, "user-1", visitDate: null);
+
+        Assert.True(result);
+        Assert.Null(db.Context.Visits.Single().VisitDate);
+    }
+
+    [Fact]
+    public async Task UpdateVisitAsync_ReturnsFalse_WhenVisitNotFound()
+    {
+        using var db = new TestDb();
+        var service = new VisitService(db.Context);
+
+        var result = await service.UpdateVisitAsync(visitId: 999, "user-1", visitDate: null);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task UpdateVisitAsync_ReturnsFalse_WhenWrongUser()
+    {
+        using var db = new TestDb();
+        var park = MakePark();
+        db.Context.Parks.Add(park);
+        var visit = new Visit { ParkId = park.Id, UserId = "user-1" };
+        db.Context.Visits.Add(visit);
+        await db.Context.SaveChangesAsync();
+
+        var service = new VisitService(db.CreateFreshContext());
+        var result = await service.UpdateVisitAsync(visit.Id, "user-2", visitDate: null);
+
+        Assert.False(result);
+        Assert.NotNull(db.Context.Visits.Find(visit.Id)); // unchanged
+    }
+
+    [Fact]
+    public async Task DeleteVisitAsync_RemovesVisit_WhenOwner()
+    {
+        using var db = new TestDb();
+        var park = MakePark();
+        db.Context.Parks.Add(park);
+        var visit = new Visit { ParkId = park.Id, UserId = "user-1" };
+        db.Context.Visits.Add(visit);
+        await db.Context.SaveChangesAsync();
+
+        var service = new VisitService(db.CreateFreshContext());
+        var result = await service.DeleteVisitAsync(visit.Id, "user-1");
+
+        Assert.True(result);
+        Assert.Empty(db.Context.Visits);
+    }
+
+    [Fact]
+    public async Task DeleteVisitAsync_ReturnsFalse_WhenVisitNotFound()
+    {
+        using var db = new TestDb();
+        var service = new VisitService(db.Context);
+
+        var result = await service.DeleteVisitAsync(visitId: 999, "user-1");
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task DeleteVisitAsync_ReturnsFalse_WhenWrongUser()
+    {
+        using var db = new TestDb();
+        var park = MakePark();
+        db.Context.Parks.Add(park);
+        var visit = new Visit { ParkId = park.Id, UserId = "user-1" };
+        db.Context.Visits.Add(visit);
+        await db.Context.SaveChangesAsync();
+
+        var service = new VisitService(db.CreateFreshContext());
+        var result = await service.DeleteVisitAsync(visit.Id, "user-2");
+
+        Assert.False(result);
+        Assert.NotNull(db.Context.Visits.Find(visit.Id)); // unchanged
     }
 }
