@@ -60,10 +60,13 @@
                         }
                         else
                         {
-                            @string.Join(", ", visits.Select(v =>
-                                v.VisitDate.HasValue
-                                    ? v.VisitDate.Value.ToString("MMM d, yyyy")
-                                    : "Date unknown"))
+                            @foreach (var v in visits)
+                            {
+                                <div class="d-flex align-items-center gap-2">
+                                    <span>@(v.VisitDate.HasValue ? v.VisitDate.Value.ToString("MMM d, yyyy") : "Date unknown")</span>
+                                    <button class="btn btn-sm btn-link p-0 lh-1" @onclick="() => OpenEditVisit(v, park)">Edit</button>
+                                </div>
+                            }
                         }
                     </td>
                     <td class="text-end">
@@ -89,12 +92,23 @@
                    OnClose="CloseModal" />
 }
 
+@if (showEditModal && selectedVisit is not null && selectedVisitPark is not null)
+{
+    <EditVisitModal Visit="selectedVisit"
+                    Park="selectedVisitPark"
+                    OnVisitSaved="HandleVisitSaved"
+                    OnClose="CloseModal" />
+}
+
 @code {
     private List<Park> parks = [];
     private string? currentUserId;
     private string filterText = string.Empty;
     private bool showModal = false;
     private Park? selectedPark;
+    private bool showEditModal = false;
+    private Visit? selectedVisit;
+    private Park? selectedVisitPark;
 
     private IEnumerable<Park> FilteredParks =>
         string.IsNullOrWhiteSpace(filterText)
@@ -117,16 +131,29 @@
         showModal = true;
     }
 
+    private void OpenEditVisit(Visit visit, Park park)
+    {
+        selectedVisit = visit;
+        selectedVisitPark = park;
+        showEditModal = true;
+    }
+
     private void CloseModal()
     {
         showModal = false;
         selectedPark = null;
+        showEditModal = false;
+        selectedVisit = null;
+        selectedVisitPark = null;
     }
 
     private async Task HandleVisitSaved()
     {
         showModal = false;
         selectedPark = null;
+        showEditModal = false;
+        selectedVisit = null;
+        selectedVisitPark = null;
         if (currentUserId is not null)
             parks = await ParkService.GetAllParksWithUserVisitsAsync(currentUserId);
     }

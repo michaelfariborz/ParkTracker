@@ -1,0 +1,132 @@
+@using System.Security.Claims
+@using ParkTracker.Data.Models
+@using ParkTracker.Services
+
+@inject IVisitService VisitService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<EditVisitModal> Logger
+
+<div class="modal-backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1040;"
+     @onclick="OnClose"></div>
+
+<div class="modal d-block" tabindex="-1" style="z-index:1050;">
+    <div class="modal-dialog" @onclick:stopPropagation>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Park Visit</h5>
+                <button type="button" class="btn-close" @onclick="OnClose"></button>
+            </div>
+            <EditForm Model="model" OnValidSubmit="HandleSubmit">
+                <div class="modal-body">
+                    @if (errorMessage is not null)
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Park</label>
+                        <p class="form-control-plaintext fw-semibold">@Park.Name (@Park.State)</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Visit Date (optional)</label>
+                        <InputDate class="form-control" @bind-Value="model.VisitDate" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
+                    <button type="button" class="btn btn-outline-danger" @onclick="HandleDelete" disabled="@saving">Remove Visit</button>
+                    <button type="submit" class="btn btn-primary" disabled="@saving">Update Visit</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Visit Visit { get; set; } = null!;
+    [Parameter, EditorRequired] public Park Park { get; set; } = null!;
+    [Parameter, EditorRequired] public EventCallback OnVisitSaved { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+
+    private FormModel model = new();
+    private string? errorMessage;
+    private bool saving = false;
+
+    protected override void OnParametersSet() => model.VisitDate = Visit.VisitDate;
+
+    private async Task HandleSubmit()
+    {
+        saving = true;
+        errorMessage = null;
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId is null)
+        {
+            errorMessage = "You must be logged in to edit a visit.";
+            saving = false;
+            return;
+        }
+
+        try
+        {
+            var success = await VisitService.UpdateVisitAsync(Visit.Id, userId, model.VisitDate);
+            if (!success)
+            {
+                errorMessage = "Visit not found or access denied.";
+                return;
+            }
+            await OnVisitSaved.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to update visit. Please try again.";
+            Logger.LogError(ex, "Failed to update visit {VisitId}", Visit.Id);
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task HandleDelete()
+    {
+        saving = true;
+        errorMessage = null;
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId is null)
+        {
+            errorMessage = "You must be logged in to remove a visit.";
+            saving = false;
+            return;
+        }
+
+        try
+        {
+            var success = await VisitService.DeleteVisitAsync(Visit.Id, userId);
+            if (!success)
+            {
+                errorMessage = "Visit not found or access denied.";
+                return;
+            }
+            await OnVisitSaved.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to remove visit. Please try again.";
+            Logger.LogError(ex, "Failed to delete visit {VisitId}", Visit.Id);
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private class FormModel
+    {
+        public DateTime? VisitDate { get; set; }
+    }
+}
