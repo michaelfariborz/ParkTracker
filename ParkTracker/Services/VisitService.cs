@@ -25,4 +25,24 @@ public class VisitService(ApplicationDbContext db) : IVisitService
             .Where(v => v.UserId == userId)
             .OrderByDescending(v => v.VisitDate ?? v.CreatedAt)
             .ToListAsync();
+
+    public async Task<bool> UpdateVisitAsync(int visitId, string userId, DateTime? visitDate)
+    {
+        var visit = await db.Visits.FirstOrDefaultAsync(v => v.Id == visitId && v.UserId == userId);
+        if (visit is null) return false;
+        visit.VisitDate = visitDate.HasValue
+            ? DateTime.SpecifyKind(visitDate.Value, DateTimeKind.Utc)
+            : null;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteVisitAsync(int visitId, string userId)
+    {
+        var visit = await db.Visits.FirstOrDefaultAsync(v => v.Id == visitId && v.UserId == userId);
+        if (visit is null) return false;
+        db.Visits.Remove(visit);
+        await db.SaveChangesAsync();
+        return true;
+    }
 }
