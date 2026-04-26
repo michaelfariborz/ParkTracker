@@ -17,6 +17,7 @@
     --color-primary-dark: #2d6a4f;
     --color-accent-dim: rgba(168, 224, 99, 0.15);
     --color-base: #0f1a12;
+    --color-text-muted: #9ca3af;
 }
 
 /* ============================================================
@@ -45,14 +46,13 @@ a, .btn-link {
 }
 
 .btn-primary {
-    color: #fff;
-    background-color: var(--color-primary);
-    border-color: var(--color-primary-dark);
-}
-
-.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
-    background-color: var(--color-primary-dark);
-    border-color: var(--color-primary-dark);
+    --bs-btn-bg: var(--color-primary);
+    --bs-btn-border-color: var(--color-primary-dark);
+    --bs-btn-hover-bg: var(--color-primary-dark);
+    --bs-btn-hover-border-color: var(--color-primary-dark);
+    --bs-btn-active-bg: var(--color-primary-dark);
+    --bs-btn-active-border-color: var(--color-primary-dark);
+    --bs-btn-color: #fff;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
