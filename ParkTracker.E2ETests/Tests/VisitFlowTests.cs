@@ -46,8 +46,8 @@ public class VisitFlowTests : IClassFixture<PlaywrightFixture>
         await page.WaitForSelectorAsync(".modal", new() { State = WaitForSelectorState.Hidden });
 
         // Park should now show "Visited" badge
-        await page.WaitForSelectorAsync(".badge.bg-success");
-        Assert.True(await page.IsVisibleAsync(".badge.bg-success"));
+        await page.WaitForSelectorAsync(".badge.visited-badge");
+        Assert.True(await page.IsVisibleAsync(".badge.visited-badge"));
         await page.CloseAsync();
     }
 }
