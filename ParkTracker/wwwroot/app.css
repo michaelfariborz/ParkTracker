@@ -237,3 +237,26 @@ h1:focus {
     .visit-stats__fill { transition: none; }
     .modal.d-block .modal-dialog { animation: none; }
 }
+
+/* ============================================================
+   Bootstrap Info Color Overrides
+   ============================================================ */
+.alert-info {
+    --bs-alert-bg: rgba(168, 224, 99, 0.12);
+    --bs-alert-border-color: rgba(168, 224, 99, 0.4);
+    --bs-alert-color: var(--color-primary-dark);
+}
+
+[data-bs-theme="dark"] .alert-info {
+    --bs-alert-bg: rgba(168, 224, 99, 0.08);
+    --bs-alert-border-color: rgba(168, 224, 99, 0.2);
+    --bs-alert-color: var(--color-accent);
+}
+
+.text-info {
+    color: var(--color-primary) !important;
+}
+
+[data-bs-theme="dark"] .text-info {
+    color: var(--color-link) !important;
+}
