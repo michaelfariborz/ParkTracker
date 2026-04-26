@@ -18,8 +18,16 @@
 
 <h1>My National Parks</h1>
 
-<div class="mb-3 d-flex align-items-center justify-content-between">
-    <span class="text-muted">Visited @parks.Count(p => p.Visits.Any()) of @parks.Count parks</span>
+<div class="mb-4 d-flex align-items-end justify-content-between">
+    <div>
+        <div class="visit-stats__numbers">
+            <span class="visit-stats__count">@VisitedCount</span><span class="visit-stats__total"> / @parks.Count</span>
+        </div>
+        <div class="visit-stats__bar">
+            <div class="visit-stats__fill" style="width: @ProgressPct%"></div>
+        </div>
+        <div class="visit-stats__label">@ProgressPct% explored</div>
+    </div>
     <button class="btn btn-primary" @onclick="() => showModal = true">+ Add Visit</button>
 </div>
 
@@ -39,6 +47,9 @@
     private bool showModal = false;
     private int? preselectedParkId;
     private DotNetObjectReference<Home>? dotNetRef;
+
+    private int VisitedCount => parks.Count(p => p.Visits.Any());
+    private int ProgressPct => parks.Count > 0 ? VisitedCount * 100 / parks.Count : 0;
 
     protected override async Task OnInitializedAsync()
     {
