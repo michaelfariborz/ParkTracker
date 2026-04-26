@@ -20,7 +20,7 @@ nav.navbar {
 .nav-link.active {
     color: white !important;
     font-weight: 600;
-    border-bottom: 2px solid #74c69d;
+    border-bottom: 2px solid var(--color-accent);
 }
 
 /* Logout button styled to match nav links */
