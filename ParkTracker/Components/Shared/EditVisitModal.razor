@@ -32,8 +32,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-danger me-auto" @onclick="HandleDelete" disabled="@saving">Remove Visit</button>
                     <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
-                    <button type="button" class="btn btn-outline-danger" @onclick="HandleDelete" disabled="@saving">Remove Visit</button>
                     <button type="submit" class="btn btn-primary" disabled="@saving">Update Visit</button>
                 </div>
             </EditForm>
