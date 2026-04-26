@@ -88,7 +88,8 @@ app.Use(async (context, next) =>
     context.Response.Headers["Content-Security-Policy"] =
         "default-src 'self'; " +
         "script-src 'self' 'unsafe-inline' https://unpkg.com; " +
-        "style-src 'self' 'unsafe-inline' https://unpkg.com; " +
+        "style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; " +
         "img-src 'self' data: https://*.tile.openstreetmap.org;";
     await next();
 });

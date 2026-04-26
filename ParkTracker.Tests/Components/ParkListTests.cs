@@ -128,6 +128,41 @@ public class ParkListTests : BunitContext
     }
 
     [Fact]
+    public async Task VisitedPark_RowHasVisitedClass_UnvisitedRowDoesNot()
+    {
+        var parks = new List<Park>
+        {
+            new Park { Id = 1, Name = "Acadia", State = "ME", Latitude = 44.4, Longitude = -68.2,
+                Visits = [new Visit { ParkId = 1, UserId = TestUserId, CreatedAt = DateTime.UtcNow }] },
+            new Park { Id = 2, Name = "Zion", State = "UT", Latitude = 37.3, Longitude = -113.0 }
+        };
+        SetupServices(parks);
+        var cut = Render<ParkList>();
+        await cut.InvokeAsync(() => { });
+
+        var rows = cut.FindAll("tbody tr");
+        Assert.Contains("park-row--visited", rows[0].ClassName ?? "");
+        Assert.DoesNotContain("park-row--visited", rows[1].ClassName ?? "");
+    }
+
+    [Fact]
+    public async Task VisitedPark_BadgeUsesVisitedBadgeClass()
+    {
+        var parks = new List<Park>
+        {
+            new Park { Id = 1, Name = "Acadia", State = "ME", Latitude = 44.4, Longitude = -68.2,
+                Visits = [new Visit { ParkId = 1, UserId = TestUserId, CreatedAt = DateTime.UtcNow }] }
+        };
+        SetupServices(parks);
+        var cut = Render<ParkList>();
+        await cut.InvokeAsync(() => { });
+
+        var badge = cut.Find(".badge");
+        Assert.Contains("visited-badge", badge.ClassName ?? "");
+        Assert.DoesNotContain("bg-success", badge.ClassName ?? "");
+    }
+
+    [Fact]
     public async Task HandleVisitSaved_RefreshesParksAndClosesModal()
     {
         var parkService = SetupServices();
