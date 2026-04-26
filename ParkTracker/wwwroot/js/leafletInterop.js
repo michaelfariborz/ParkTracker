@@ -27,19 +27,14 @@ window.leafletInterop = (function () {
     function addPins(parks, dotNetObjRef) {
         dotNetRef = dotNetObjRef;
         parks.forEach(function (park) {
-            const color = park.visited ? '#e63946' : '#adb5bd';
+            const fillColor = park.visited ? '#a8e063' : '#9ca3af';
+            const strokeColor = park.visited ? '#1b4332' : '#6b7280';
             const icon = L.divIcon({
                 className: '',
-                html: `<div style="
-                    width: 14px;
-                    height: 14px;
-                    border-radius: 50%;
-                    background-color: ${color};
-                    border: 2px solid white;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-                "></div>`,
-                iconSize: [14, 14],
-                iconAnchor: [7, 7]
+                html: `<svg width="20" height="30" viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,0.3))"><path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24C24 5.373 18.627 0 12 0z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="1.5"/><circle cx="12" cy="12" r="4" fill="white" opacity="0.85"/></svg>`,
+                iconSize: [20, 30],
+                iconAnchor: [10, 30],
+                popupAnchor: [0, -32]
             });
 
             let popupHtml = `<strong>${escapeHtml(park.name)}</strong><br>${escapeHtml(park.state)}`;
